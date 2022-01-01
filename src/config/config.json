@@ -5,7 +5,8 @@
     "database": "bookingcare",
     "host": "localhost",
     "port":"8889",
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "logging":false
   },
   "test": {
     "username": "root",

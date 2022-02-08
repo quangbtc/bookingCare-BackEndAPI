@@ -5,7 +5,7 @@ const {
 // Option 3: Passing parameters separately (other dialects)
 const sequelize = new Sequelize('bookingcare', 'root', 'root', {
     host: 'localhost',
-    port: 8889,
+    // port: "8889",
     dialect: 'mysql',
     logging: false
 })

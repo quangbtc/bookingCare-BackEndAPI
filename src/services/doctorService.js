@@ -1,4 +1,6 @@
 import db from "../models/index";
+require("dotenv").config();
+import _ from "lodash";
 let getUserDoctors = (limitInput) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -134,9 +136,99 @@ let getDetailDoctorById = (doctorId) => {
     }
   });
 };
+let createBulkDoctorScheduleService = (dataInput) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!dataInput.arrSchedule || !dataInput.doctorId || !dataInput.date) {
+        resolve({
+          errCode: 1,
+          message: "Missing data input",
+        });
+      } else {
+        let arrSchedule = dataInput.arrSchedule;
+        if (arrSchedule && arrSchedule.length > 0) {
+          arrSchedule = arrSchedule.map((item) => {
+            item.maxNumber = process.env.MAX_NUMBER;
+            return item;
+          });
+        }
+        //GET OLD DATE WITH DOCTORID AND DATE CONDITION
+        let scheduleExist = await db.Schedule.findAll({
+          where: { doctorId: dataInput.doctorId, date: dataInput.date },
+          attributes: ["maxNumber", "date", "timeType", "doctorId"],
+          raw: false,
+        });
+        //FORMAT DATE TYPE
+        // if (scheduleExist && scheduleExist.length > 0) {
+        //   scheduleExist = scheduleExist.map((item) => {
+        //     item.date = new Date(item.date).getTime();
+        //     return item;
+        //   });
+        // }
+
+        //CHECK DIFFERENT
+        let toCreateDoctorSchedule = _.differenceWith(
+          arrSchedule,
+          scheduleExist,
+          (a, b) => {
+            return a.timeType === b.timeType && a.date === b.date;
+          }
+        );
+        console.log("Check datainput", arrSchedule);
+        // ADD TO DATABASE
+        if (toCreateDoctorSchedule && toCreateDoctorSchedule.length > 0) {
+          await db.Schedule.bulkCreate(toCreateDoctorSchedule);
+          resolve({
+            errCode: 0,
+            message: "Create doctor schedule successfully",
+          });
+        } else {
+          resolve({
+            errCode: 2,
+            message: "Data already exits",
+          });
+        }
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+let getScheduleDoctorService = (data) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!data.doctorId || !data.date) {
+        resolve({
+          errCode: 1,
+          message: "Missing parameter input",
+        });
+      } else {
+        let dateData = data.date.toString();
+        let doctorIdData = parseInt(data.doctorId);
+
+        let response = await db.Schedule.findAll({
+          where: {
+            doctorId: doctorIdData,
+            date: dateData,
+          },
+          raw: true,
+        });
+        resolve({
+          errCode: 0,
+          data: response,
+          message: "Get data successfully",
+        });
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
 module.exports = {
   getUserDoctors: getUserDoctors,
   getAllDoctorService: getAllDoctorService,
   createInfoDoctorsService: createInfoDoctorsService,
   getDetailDoctorById: getDetailDoctorById,
+  createBulkDoctorScheduleService: createBulkDoctorScheduleService,
+  getScheduleDoctorService: getScheduleDoctorService,
 };

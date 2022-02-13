@@ -1,4 +1,5 @@
 import doctorService from "../services/doctorService";
+
 let handleGetUserDoctors = async (req, res) => {
   let limit = req.query.limit;
   if (!limit) limit = 10;
@@ -63,9 +64,36 @@ let getDetailDoctorById = async (req, res) => {
     });
   }
 };
+let createBulkDoctorSchedule = async (req, res) => {
+  try {
+    let message = await doctorService.createBulkDoctorScheduleService(req.body);
+    return res.status(200).json(message);
+  } catch (error) {
+    console.log("Error from server", error);
+    return res.status(200).json({
+      errCode: -1,
+      message: "Error from server.",
+    });
+  }
+};
+let getScheduleByDateAndDoctorId = async (req, res) => {
+  let data = req.query;
+  try {
+    let response = await doctorService.getScheduleDoctorService(data);
+    return res.status(200).json(response);
+  } catch (error) {
+    console.log("Error from server", error);
+    return res.status(200).json({
+      errCode: -1,
+      message: "Have error from server...",
+    });
+  }
+};
 module.exports = {
   handleGetUserDoctors: handleGetUserDoctors,
   getAllDoctors: getAllDoctors,
   createInfoDoctors: createInfoDoctors,
   getDetailDoctorById: getDetailDoctorById,
+  createBulkDoctorSchedule: createBulkDoctorSchedule,
+  getScheduleByDateAndDoctorId: getScheduleByDateAndDoctorId,
 };

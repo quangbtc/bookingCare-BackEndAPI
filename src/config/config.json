@@ -4,6 +4,7 @@
     "password": "root",
     "database": "bookingcare",
     "host": "localhost",
+    "port": "8889",
     "dialect": "mysql",
     "logging": false,
     "query": { "raw": true },

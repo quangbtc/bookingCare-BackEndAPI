@@ -211,7 +211,15 @@ let getScheduleDoctorService = (data) => {
             doctorId: doctorIdData,
             date: dateData,
           },
+          include: [
+            {
+              model: db.Allcode,
+              as: "timeTypeData",
+              attributes: ["valueVi", "valueEn"],
+            },
+          ],
           raw: true,
+          nest: true,
         });
         resolve({
           errCode: 0,

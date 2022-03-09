@@ -1,3 +1,4 @@
+import res from "express/lib/response";
 import doctorService from "../services/doctorService";
 
 let handleGetUserDoctors = async (req, res) => {
@@ -89,6 +90,20 @@ let getScheduleByDateAndDoctorId = async (req, res) => {
     });
   }
 };
+let getProfileDoctorById = async (req, res) => {
+  try {
+    let response = await doctorService.getProfileDoctorService(
+      req.query.doctorId
+    );
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log("Error from server...", e);
+    return res.status(200).json({
+      errCode: -1,
+      message: "Have error from server..",
+    });
+  }
+};
 module.exports = {
   handleGetUserDoctors: handleGetUserDoctors,
   getAllDoctors: getAllDoctors,
@@ -96,4 +111,5 @@ module.exports = {
   getDetailDoctorById: getDetailDoctorById,
   createBulkDoctorSchedule: createBulkDoctorSchedule,
   getScheduleByDateAndDoctorId: getScheduleByDateAndDoctorId,
+  getProfileDoctorById: getProfileDoctorById,
 };

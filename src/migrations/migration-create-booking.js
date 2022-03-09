@@ -9,7 +9,7 @@ module.exports = {
                 type: Sequelize.INTEGER
             },
             statusId: {
-                type: Sequelize.INTEGER
+                type: Sequelize.STRING
             },
             doctorId: {
                 type: Sequelize.INTEGER
@@ -18,9 +18,12 @@ module.exports = {
                 type: Sequelize.INTEGER
             },
             date: {
-                type: Sequelize.DATE
+                type: Sequelize.STRING
             },
             timeType: {
+                type: Sequelize.STRING
+            },
+            token: {
                 type: Sequelize.STRING
             },
             createdAt: {

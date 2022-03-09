@@ -59,13 +59,19 @@ let createInfoDoctorsService = (inputData) => {
         !inputData.doctorId ||
         !inputData.contentMarkdown ||
         !inputData.contentHtml ||
-        !inputData.action
+        !inputData.action ||
+        !inputData.nameClinic ||
+        !inputData.addressClinic ||
+        !inputData.selectedPrice ||
+        !inputData.selectedPayment ||
+        !inputData.selectedProvince
       ) {
         resolve({
           errCode: 1,
           message: "Missing parameter is required !",
         });
       } else {
+        //upsert markdown
         if (inputData.action === "ADD") {
           await db.Markdown.create({
             doctorId: inputData.doctorId,
@@ -86,7 +92,34 @@ let createInfoDoctorsService = (inputData) => {
             await doctorMarkdown.save();
           }
         }
-
+        //upsert doctor_info
+        let doctorInfo = await db.Doctor_info.findOne({
+          where: { doctorId: inputData.doctorId },
+          raw: false,
+        });
+        console.log("Check doctor Info", doctorInfo);
+        if (doctorInfo) {
+          //update
+          doctorInfo.doctorId = inputData.doctorId;
+          doctorInfo.nameClinic = inputData.nameClinic;
+          doctorInfo.addressClinic = inputData.addressClinic;
+          doctorInfo.note = inputData.note;
+          doctorInfo.priceId = inputData.selectedPrice;
+          doctorInfo.paymentId = inputData.selectedPayment;
+          doctorInfo.provinceId = inputData.selectedProvince;
+          await doctorInfo.save();
+        } else {
+          //create new info doctor
+          await db.Doctor_info.create({
+            doctorId: inputData.doctorId,
+            nameClinic: inputData.nameClinic,
+            addressClinic: inputData.addressClinic,
+            note: inputData.note,
+            priceId: inputData.selectedPrice,
+            paymentId: inputData.selectedPayment,
+            provinceId: inputData.selectedProvince,
+          });
+        }
         resolve({
           errCode: 0,
           message: "Add info doctors succeed !",
@@ -111,13 +144,34 @@ let getDetailDoctorById = (doctorId) => {
             attributes: ["contentHtml", "description", "contentMarkdown"],
           },
           {
+            model: db.Doctor_info,
+            attributes: { exclude: ["id", "doctorId"] },
+            include: [
+              {
+                model: db.Allcode,
+                as: "priceTypeData",
+                attributes: ["valueVi", "valueEn"],
+              },
+              {
+                model: db.Allcode,
+                as: "paymentTypeData",
+                attributes: ["valueVi", "valueEn"],
+              },
+              {
+                model: db.Allcode,
+                as: "provinceTypeData",
+                attributes: ["valueVi", "valueEn"],
+              },
+            ],
+          },
+          {
             model: db.Allcode,
             as: "positionData",
             attributes: ["valueVi", "valueEn"],
           },
         ],
         nest: true,
-        raw: true,
+        raw: false,
       });
       if (detailDoctor && detailDoctor.image) {
         detailDoctor.image = new Buffer(detailDoctor.image, "base64").toString(
@@ -217,6 +271,11 @@ let getScheduleDoctorService = (data) => {
               as: "timeTypeData",
               attributes: ["valueVi", "valueEn"],
             },
+            {
+              model: db.User,
+              as: "doctorData",
+              attributes: ["lastName", "firstName"],
+            },
           ],
           raw: true,
           nest: true,
@@ -232,6 +291,75 @@ let getScheduleDoctorService = (data) => {
     }
   });
 };
+let getProfileDoctorService = (inputId) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!inputId) {
+        resolve({
+          errCode: 1,
+          message: "Missing parameter input.",
+        });
+      } else {
+        let profileDoctor = await db.User.findOne({
+          where: { id: inputId },
+          attributes: {
+            exclude: ["password"],
+          },
+          include: [
+            {
+              model: db.Markdown,
+              attributes: ["description"],
+            },
+            {
+              model: db.Doctor_info,
+              attributes: { exclude: ["id", "doctorId"] },
+              include: [
+                {
+                  model: db.Allcode,
+                  as: "priceTypeData",
+                  attributes: ["valueVi", "valueEn"],
+                },
+                {
+                  model: db.Allcode,
+                  as: "paymentTypeData",
+                  attributes: ["valueVi", "valueEn"],
+                },
+                {
+                  model: db.Allcode,
+                  as: "provinceTypeData",
+                  attributes: ["valueVi", "valueEn"],
+                },
+              ],
+            },
+            {
+              model: db.Allcode,
+              as: "positionData",
+              attributes: ["valueVi", "valueEn"],
+            },
+          ],
+          nest: true,
+          raw: false,
+        });
+        if (profileDoctor && profileDoctor.image) {
+          profileDoctor.image = new Buffer(
+            profileDoctor.image,
+            "base64"
+          ).toString("binary");
+        }
+        if (!profileDoctor) {
+          profileDoctor = {};
+        }
+        resolve({
+          errCode: 0,
+          data: profileDoctor,
+          message: "Get data succeed",
+        });
+      }
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 module.exports = {
   getUserDoctors: getUserDoctors,
   getAllDoctorService: getAllDoctorService,
@@ -239,4 +367,5 @@ module.exports = {
   getDetailDoctorById: getDetailDoctorById,
   createBulkDoctorScheduleService: createBulkDoctorScheduleService,
   getScheduleDoctorService: getScheduleDoctorService,
+  getProfileDoctorService: getProfileDoctorService,
 };
